@@ -1,0 +1,310 @@
+<?php
+// 主题设置
+function minimal_personal_setup() {
+    // 支持自定义Logo
+    add_theme_support('custom-logo');
+    
+    // 支持文章特色图片
+    add_theme_support('post-thumbnails');
+    
+    // 支持自动Feed链接
+    add_theme_support('automatic-feed-links');
+    
+    // 支持HTML5
+    add_theme_support('html5', array(
+        'search-form',
+        'comment-form',
+        'comment-list',
+        'gallery',
+        'caption',
+    ));
+    
+    // 注册图片尺寸
+    add_image_size('grid-thumb', 300, 300, true);
+    
+    // 创建必要的页面
+    minimal_personal_create_pages();
+    
+    // 启用文章点赞功能
+    minimal_personal_setup_likes();
+    
+    // 启用文章浏览计数
+    minimal_personal_setup_views();
+}
+add_action('after_setup_theme', 'minimal_personal_setup');
+
+// 创建默认页面
+function minimal_personal_create_pages() {
+    $pages = array(
+        '发现' => array(
+            'content' => '',
+            'template' => 'page-discovery.php'
+        ),
+        '朋友' => array(
+            'content' => '<!-- wp:html --><div class="links-list"></div><!-- /wp:html -->',
+            'template' => 'page-friends.php'
+        ),
+        '我的' => array(
+            'content' => '欢迎编辑您的个人介绍...',
+            'template' => 'page-about.php'
+        )
+    );
+    
+    foreach ($pages as $title => $data) {
+        $page = get_page_by_title($title);
+        if (!$page) {
+            $page_id = wp_insert_post(array(
+                'post_title' => $title,
+                'post_content' => $data['content'],
+                'post_status' => 'publish',
+                'post_type' => 'page',
+                'post_name' => sanitize_title($title)
+            ));
+            
+            if ($page_id && isset($data['template'])) {
+                update_post_meta($page_id, '_wp_page_template', $data['template']);
+            }
+        }
+    }
+}
+
+// 注册菜单
+function minimal_personal_menus() {
+    register_nav_menus(array(
+        'bottom-nav' => '底部导航菜单'
+    ));
+}
+add_action('init', 'minimal_personal_menus');
+
+// 自定义头像字段
+function minimal_personal_customize_register($wp_customize) {
+    // 个人头像
+    $wp_customize->add_setting('personal_avatar', array(
+        'default' => '',
+        'sanitize_callback' => 'esc_url_raw'
+    ));
+    
+    $wp_customize->add_control(new WP_Customize_Image_Control($wp_customize, 'personal_avatar', array(
+        'label' => '个人头像',
+        'section' => 'title_tagline',
+        'settings' => 'personal_avatar'
+    )));
+    
+    // 个人昵称
+    $wp_customize->add_setting('personal_nickname', array(
+        'default' => '',
+        'sanitize_callback' => 'sanitize_text_field'
+    ));
+    
+    $wp_customize->add_control('personal_nickname', array(
+        'label' => '个人昵称',
+        'section' => 'title_tagline',
+        'type' => 'text'
+    ));
+    
+    // 个性签名
+    $wp_customize->add_setting('personal_signature', array(
+        'default' => '',
+        'sanitize_callback' => 'sanitize_text_field'
+    ));
+    
+    $wp_customize->add_control('personal_signature', array(
+        'label' => '个性签名',
+        'section' => 'title_tagline',
+        'type' => 'text'
+    ));
+}
+add_action('customize_register', 'minimal_personal_customize_register');
+
+// 友情链接自定义文章类型
+function minimal_personal_links_post_type() {
+    register_post_type('friend_link',
+        array(
+            'labels' => array(
+                'name' => '友情链接',
+                'singular_name' => '友情链接'
+            ),
+            'public' => true,
+            'has_archive' => false,
+            'supports' => array('title', 'thumbnail'),
+            'menu_icon' => 'dashicons-admin-links'
+        )
+    );
+}
+add_action('init', 'minimal_personal_links_post_type');
+
+// 获取页面ID函数
+function minimal_personal_get_page_id($title) {
+    $page = get_page_by_title($title);
+    return $page ? $page->ID : 0;
+}
+
+// 设置点赞功能
+function minimal_personal_setup_likes() {
+    // 为文章添加点赞meta字段
+    register_meta('post', '_minimal_personal_likes', array(
+        'type' => 'integer',
+        'single' => true,
+        'default' => 0,
+        'show_in_rest' => true,
+    ));
+}
+
+// 设置浏览计数功能
+function minimal_personal_setup_views() {
+    // 为文章添加浏览计数meta字段
+    register_meta('post', '_minimal_personal_views', array(
+        'type' => 'integer',
+        'single' => true,
+        'default' => 0,
+        'show_in_rest' => true,
+    ));
+}
+
+// 更新文章浏览计数
+function minimal_personal_update_views($post_id) {
+    if (!is_single() || !$post_id) return;
+    
+    $current_views = get_post_meta($post_id, '_minimal_personal_views', true) ?: 0;
+    $new_views = $current_views + 1;
+    update_post_meta($post_id, '_minimal_personal_views', $new_views);
+}
+add_action('wp_head', 'minimal_personal_update_views');
+
+// 处理点赞AJAX请求
+function minimal_personal_handle_like() {
+    $post_id = isset($_POST['post_id']) ? intval($_POST['post_id']) : 0;
+    
+    if ($post_id > 0) {
+        $current_likes = get_post_meta($post_id, '_minimal_personal_likes', true) ?: 0;
+        $new_likes = $current_likes + 1;
+        update_post_meta($post_id, '_minimal_personal_likes', $new_likes);
+        
+        wp_send_json_success(array(
+            'likes' => $new_likes,
+            'message' => '点赞成功'
+        ));
+    }
+    
+    wp_send_json_error('点赞失败');
+}
+
+add_action('wp_ajax_minimal_personal_like', 'minimal_personal_handle_like');
+add_action('wp_ajax_nopriv_minimal_personal_like', 'minimal_personal_handle_like');
+
+// 添加CSS和JS
+function minimal_personal_enqueue_scripts() {
+    wp_enqueue_style('minimal-personal-style', get_stylesheet_uri());
+    
+    // 灯箱样式和脚本
+    wp_enqueue_script('minimal-personal-lightbox', get_template_directory_uri() . '/js/lightbox.js', array(), '1.0', true);
+    wp_enqueue_style('minimal-personal-lightbox-style', get_template_directory_uri() . '/css/lightbox.css');
+    
+    // 点赞功能脚本
+    wp_enqueue_script('minimal-personal-likes', get_template_directory_uri() . '/js/likes.js', array('jquery'), '1.0', true);
+    wp_localize_script('minimal-personal-likes', 'minimal_personal_ajax', array(
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('minimal_personal_nonce')
+    ));
+    
+    // 评论回复脚本（如果支持评论）
+    if (is_singular() && comments_open() && get_option('thread_comments')) {
+        wp_enqueue_script('comment-reply');
+    }
+}
+add_action('wp_enqueue_scripts', 'minimal_personal_enqueue_scripts');
+
+// 自定义评论表单字段
+function minimal_personal_comment_form_fields($fields) {
+    $commenter = wp_get_current_commenter();
+    $req = get_option('require_name_email');
+    $aria_req = ($req ? " required" : '');
+    
+    $fields['author'] = '
+    <div class="comment-form-author">
+        <input id="author" name="author" type="text" placeholder="姓名' . ($req ? ' *' : '') . '" 
+               value="' . esc_attr($commenter['comment_author']) . '" size="30"' . $aria_req . ' />
+    </div>';
+    
+    $fields['email'] = '
+    <div class="comment-form-email">
+        <input id="email" name="email" type="email" placeholder="邮箱' . ($req ? ' *' : '') . '" 
+               value="' . esc_attr($commenter['comment_author_email']) . '" size="30"' . $aria_req . ' />
+    </div>';
+    
+    $fields['url'] = '
+    <div class="comment-form-url">
+        <input id="url" name="url" type="url" placeholder="网站" 
+               value="' . esc_attr($commenter['comment_author_url']) . '" size="30" />
+    </div>';
+    
+    return $fields;
+}
+add_filter('comment_form_fields', 'minimal_personal_comment_form_fields');
+
+// 自定义评论表单
+function minimal_personal_comment_form($args) {
+    $args['comment_field'] = '
+    <div class="comment-form-comment">
+        <textarea id="comment" name="comment" placeholder="写下您的评论..." rows="4" required></textarea>
+    </div>';
+    
+    $args['submit_button'] = '
+    <button type="submit" class="comment-submit">发表评论</button>';
+    
+    $args['title_reply'] = '发表评论';
+    $args['title_reply_to'] = '回复 %s';
+    $args['cancel_reply_link'] = '取消回复';
+    $args['label_submit'] = '发表评论';
+    
+    return $args;
+}
+add_filter('comment_form_defaults', 'minimal_personal_comment_form');
+
+// 自定义评论显示回调函数
+function minimal_personal_comment_callback($comment, $args, $depth) {
+    $tag = ($args['style'] == 'div') ? 'div' : 'li';
+    ?>
+    
+    <<?php echo $tag; ?> id="comment-<?php comment_ID(); ?>" <?php comment_class(empty($args['has_children']) ? '' : 'parent'); ?>>
+        <article id="div-comment-<?php comment_ID(); ?>" class="comment-body">
+            <div class="comment-avatar">
+                <?php if ($args['avatar_size'] != 0) : ?>
+                    <?php echo get_avatar($comment, $args['avatar_size']); ?>
+                <?php endif; ?>
+            </div>
+            
+            <div class="comment-content">
+                <div class="comment-meta">
+                    <div class="comment-author">
+                        <?php printf('%s', get_comment_author_link()); ?>
+                    </div>
+                    
+                    <div class="comment-date">
+                        <time datetime="<?php comment_time('c'); ?>">
+                            <?php printf('%1$s %2$s', get_comment_date(), get_comment_time()); ?>
+                        </time>
+                    </div>
+                </div>
+                
+                <div class="comment-text">
+                    <?php comment_text(); ?>
+                    
+                    <?php if ($comment->comment_approved == '0') : ?>
+                        <p class="comment-awaiting-moderation">您的评论正在等待审核</p>
+                    <?php endif; ?>
+                </div>
+                
+                <div class="comment-reply">
+                    <?php
+                    comment_reply_link(array_merge($args, array(
+                        'depth'     => $depth,
+                        'max_depth' => $args['max_depth'],
+                        'reply_text' => '回复'
+                    )));
+                    ?>
+                </div>
+            </div>
+        </article>
+    <?php
+}

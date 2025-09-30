@@ -16,7 +16,10 @@
             $signature = get_theme_mod('personal_signature', get_bloginfo('description'));
             
             if ($avatar) {
+                // 添加链接到首页
+                echo '<a href="' . esc_url(home_url('/')) . '" class="avatar-link">';
                 echo '<img src="' . esc_url($avatar) . '" alt="' . esc_attr($nickname) . '" class="header-avatar">';
+                echo '</a>';
             }
             ?>
             <div class="header-text">

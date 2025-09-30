@@ -196,11 +196,13 @@ add_action('wp_ajax_nopriv_minimal_personal_like', 'minimal_personal_handle_like
 function minimal_personal_enqueue_scripts() {
     wp_enqueue_style('minimal-personal-style', get_stylesheet_uri());
     
-    // 灯箱样式和脚本
-    wp_enqueue_script('minimal-personal-lightbox', get_template_directory_uri() . '/js/lightbox.js', array(), '1.0', true);
-    wp_enqueue_style('minimal-personal-lightbox-style', get_template_directory_uri() . '/css/lightbox.css');
+    // 仅在文章详情页加载灯箱样式和脚本
+    if (is_single()) { // 关键：只在文章页面加载
+        wp_enqueue_script('minimal-personal-lightbox', get_template_directory_uri() . '/js/lightbox.js', array(), '1.0', true);
+        wp_enqueue_style('minimal-personal-lightbox-style', get_template_directory_uri() . '/css/lightbox.css');
+    }
     
-    // 点赞功能脚本
+    // 点赞功能脚本（所有页面都需要）
     wp_enqueue_script('minimal-personal-likes', get_template_directory_uri() . '/js/likes.js', array('jquery'), '1.0', true);
     wp_localize_script('minimal-personal-likes', 'minimal_personal_ajax', array(
         'ajax_url' => admin_url('admin-ajax.php'),
@@ -482,3 +484,21 @@ function friend_link_fill_list_columns($column, $post_id) {
 }
 add_action('manage_friend_link_posts_custom_column', 'friend_link_fill_list_columns', 10, 2);
 
+// 在functions.php中添加图片处理函数
+function minimal_personal_get_post_images() {
+    global $post;
+    
+    // 获取文章内容中的所有图片
+    preg_match_all('/<img[^>]+src=[\'"]([^\'"]+)[\'"]/i', $post->post_content, $matches);
+    
+    return $matches[1];
+}
+
+// 过滤文章内容，移除原始图片标签
+function minimal_personal_remove_images_from_content($content) {
+    if (is_single()) {
+        $content = preg_replace('/<img[^>]+>/i', '', $content);
+    }
+    return $content;
+}
+add_filter('the_content', 'minimal_personal_remove_images_from_content', 100);

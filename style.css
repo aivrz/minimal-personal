@@ -40,17 +40,29 @@ body {
     margin: 0 auto;
 }
 
+/* 头像样式与动画 */
+.avatar-link {
+    display: inline-block;
+}
+
 .header-avatar {
     width: 50px;
     height: 50px;
     border-radius: 50%;
     object-fit: cover;
     margin-right: 15px;
+    transition: transform 0.5s ease; /* 添加过渡效果 */
+}
+
+.header-avatar:hover {
+    transform: rotate(360deg); /* 悬停时旋转360度 */
 }
 
 .header-text {
     flex: 1;
 }
+
+/* 其他原有样式... */
 
 .header-nickname {
     font-size: 18px;
@@ -949,4 +961,73 @@ body {
 .load-more-button:disabled {
     background: #ccc;
     cursor: not-allowed;
+}
+
+/* 文章图片网格布局 */
+.post-image-grid {
+    display: grid;
+    gap: 8px;
+    margin: 20px 0;
+}
+
+/* 单张图片 */
+.post-image-grid.single-image {
+    grid-template-columns: 1fr;
+}
+
+/* 4张以内 - 四宫格 */
+.post-image-grid.four-grid {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* 6张以内 - 六宫格 */
+.post-image-grid.six-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* 九宫格 */
+.post-image-grid.nine-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.post-image-grid .grid-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.post-image-grid .grid-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+    aspect-ratio: 1/1; /* 正方形比例 */
+}
+
+/* 单张图片特殊样式 */
+.post-image-grid.single-image .grid-image {
+    aspect-ratio: auto;
+    max-height: 500px;
+    margin: 0 auto;
+}
+
+/* 查看更多覆盖层 */
+.more-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.more-text {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
 }

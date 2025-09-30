@@ -53,22 +53,66 @@ minimal_personal_update_views(get_the_ID());
             </div>
         </header>
 
-        <?php if (has_post_thumbnail()) : ?>
-            <div class="article-featured-image">
-                <?php the_post_thumbnail('large', array('class' => 'featured-image')); ?>
-            </div>
-        <?php endif; ?>
-
+        
         <div class="article-content">
-            <?php the_content(); ?>
+    <?php 
+    // 获取文章中的所有图片
+    $post_images = minimal_personal_get_post_images();
+    $total_images = count($post_images);
+    
+    // 只在有图片时显示图片网格
+    if ($total_images > 0) : 
+        // 根据图片数量确定网格布局类
+        if ($total_images == 1) {
+            $grid_class = 'single-image';
+        } elseif ($total_images <= 4) {
+            $grid_class = 'four-grid';
+        } elseif ($total_images <= 6) {
+            $grid_class = 'six-grid';
+        } else {
+            $grid_class = 'nine-grid';
+        }
+    ?>
+    
+    <div class="post-image-grid <?php echo $grid_class; ?>">
+        <?php
+        // 确定要显示的图片数量（最多9张，超过时第9张显示查看更多）
+        $display_count = min($total_images, 9);
+        
+        for ($i = 0; $i < $display_count; $i++) :
+            $image_src = $post_images[$i];
             
-            <?php
-            wp_link_pages(array(
-                'before' => '<div class="page-links">页码: ',
-                'after'  => '</div>',
-            ));
-            ?>
-        </div>
+            // 第九张且有更多图片时显示查看更多
+            if ($i == 8 && $total_images > 9) :
+        ?>
+            <div class="grid-item more-images">
+                <img src="<?php echo esc_url($image_src); ?>" alt="图片 <?php echo $i + 1; ?>" 
+                     class="grid-image" data-image-src="<?php echo esc_url($image_src); ?>"
+                     data-index="<?php echo $i; ?>">
+                <div class="more-overlay">
+                    <span class="more-text">+<?php echo $total_images - 9; ?> 查看更多</span>
+                </div>
+            </div>
+        <?php else : ?>
+            <div class="grid-item">
+                <img src="<?php echo esc_url($image_src); ?>" alt="图片 <?php echo $i + 1; ?>" 
+                     class="grid-image" data-image-src="<?php echo esc_url($image_src); ?>"
+                     data-index="<?php echo $i; ?>">
+            </div>
+        <?php endif; endfor; ?>
+    </div>
+    
+    <?php endif; ?>
+    
+    <?php the_content(); ?>
+    
+    <?php
+    wp_link_pages(array(
+        'before' => '<div class="page-links">页码: ',
+        'after'  => '</div>',
+    ));
+    ?>
+</div>
 
         <footer class="article-footer">
             <div class="article-actions">
@@ -105,6 +149,17 @@ minimal_personal_update_views(get_the_ID());
             <?php endif; ?>
         </footer>
     </article>
+
+<!-- 添加到single.php的文章内容底部 -->
+<div class="lightbox-overlay" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">×</button>
+    <button class="lightbox-nav lightbox-prev" id="lightboxPrev">‹</button>
+    <button class="lightbox-nav lightbox-next" id="lightboxNext">›</button>
+    <div class="lightbox-content">
+        <img src="" alt="" class="lightbox-image" id="lightboxImage">
+        <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
+</div>
 
     <!-- 分享弹窗 -->
     <div class="share-modal" id="shareModal">

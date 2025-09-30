@@ -21,7 +21,26 @@ class MinimalPersonalLightbox {
         this.bindEvents();
     }
     
+    // 修改collectImages方法
     collectImages() {
+    // 收集文章页面的图片
+    if (document.querySelector('.single-post')) {
+        const gridImages = document.querySelectorAll('.post-image-grid .grid-image[data-image-src]');
+        this.images = Array.from(gridImages).map(img => ({
+            src: img.dataset.imageSrc,
+            caption: img.alt
+        }));
+        
+        // 如果有更多图片，补充完整
+        const totalImages = parseInt(document.querySelector('.more-text')?.textContent.match(/\+(\d+)/)?.[1] || 0) + 9;
+        if (totalImages > this.images.length) {
+            // 这里需要实际项目中根据实际情况补充完整图片列表
+            // 示例：假设我们已经有了所有图片的数组
+            // 实际应用中可能需要通过其他方式获取完整图片列表
+        }
+    } 
+    // 保留原有的九宫格页面图片收集
+    else {
         const gridImages = document.querySelectorAll('.grid-image[data-image-src]');
         this.images = Array.from(gridImages).map(img => ({
             src: img.dataset.imageSrc,
@@ -29,12 +48,14 @@ class MinimalPersonalLightbox {
             postId: img.dataset.postId
         }));
     }
+}
     
     bindEvents() {
         // 图片点击事件
-        document.querySelectorAll('.grid-image[data-image-src]').forEach((img, index) => {
-            img.addEventListener('click', () => {
-                this.open(index);
+        document.querySelectorAll('.grid-image[data-image-src]').forEach(img => {
+           img.addEventListener('click', () => {
+           const index = parseInt(img.dataset.index || 0);
+            this.open(index);
             });
         });
         

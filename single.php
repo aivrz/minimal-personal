@@ -77,7 +77,7 @@ minimal_personal_update_views(get_the_ID());
                     <span class="action-text">点赞</span>
                 </button>
                 
-                <button class="action-button share-button" onclick="shareArticle()">
+                <button class="action-button share-button" onclick="openShareModal()">
                     <span class="action-icon">🔗</span>
                     <span class="action-text">分享</span>
                 </button>
@@ -106,6 +106,21 @@ minimal_personal_update_views(get_the_ID());
         </footer>
     </article>
 
+    <!-- 分享弹窗 -->
+    <div class="share-modal" id="shareModal">
+        <div class="share-modal-content">
+            <span class="share-modal-close">&times;</span>
+            <h3>分享文章</h3>
+            <div class="share-qrcode">
+                <img src="" alt="文章二维码" id="qrcodeImage">
+            </div>
+            <p>扫描二维码分享</p>
+            <div class="share-links">
+                <button class="copy-link" onclick="copyLink()">复制链接</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 评论区域 -->
     <div class="comments-area" id="comments">
         <?php
@@ -118,7 +133,52 @@ minimal_personal_update_views(get_the_ID());
 </div>
 
 <script>
-// 分享文章
+// 分享弹窗功能
+function openShareModal() {
+    // 加载二维码生成库(使用外部CDN)
+    if (!window.QRCode) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js';
+        script.onload = () => generateQRCode();
+        document.head.appendChild(script);
+    } else {
+        generateQRCode();
+    }
+    document.getElementById('shareModal').style.display = 'block';
+}
+
+function closeShareModal() {
+    document.getElementById('shareModal').style.display = 'none';
+}
+
+function generateQRCode() {
+    const url = '<?php echo esc_url(get_permalink()); ?>';
+    const qrcodeElement = document.getElementById('qrcodeImage');
+    QRCode.toCanvas(url, function (error, canvas) {
+        if (error) console.error(error);
+        qrcodeElement.src = canvas.toDataURL();
+    });
+}
+
+function copyLink() {
+    const url = '<?php echo esc_url(get_permalink()); ?>';
+    navigator.clipboard.writeText(url).then(() => {
+        alert('链接已复制到剪贴板');
+    });
+}
+
+// 点击弹窗外部关闭
+window.onclick = function(event) {
+    const modal = document.getElementById('shareModal');
+    if (event.target == modal) {
+        closeShareModal();
+    }
+}
+
+// 关闭按钮事件
+document.querySelector('.share-modal-close').addEventListener('click', closeShareModal);
+
+// 原生分享功能
 function shareArticle() {
     if (navigator.share) {
         navigator.share({
@@ -129,11 +189,7 @@ function shareArticle() {
         .then(() => console.log('分享成功'))
         .catch((error) => console.log('分享失败', error));
     } else {
-        // 备用分享方式：复制链接到剪贴板
-        const url = '<?php echo esc_url(get_permalink()); ?>';
-        navigator.clipboard.writeText(url).then(() => {
-            alert('链接已复制到剪贴板');
-        });
+        openShareModal(); // 不支持原生分享时显示弹窗
     }
 }
 
@@ -144,7 +200,7 @@ function scrollToComments() {
     });
 }
 
-// 点赞功能（与列表页保持一致）
+// 点赞功能
 jQuery(document).ready(function($) {
     $('.like-button').on('click', function(e) {
         e.preventDefault();

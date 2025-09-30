@@ -119,8 +119,15 @@ body {
 }
 
 .article-item {
-    border-bottom: 1px solid #eee;
-    padding: 20px 0;
+    border-bottom: 1px solid #eee; /* 保留底部边框作为分隔 */
+    padding: 25px 0; /* 增加上下内边距 */
+    margin-bottom: 15px; /* 增加底部外边距作为间隔 */
+}
+
+/* 可选：最后一篇文章去掉底部边框，避免多余线条 */
+.article-list .article-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .article-title {
@@ -226,6 +233,9 @@ body {
     overflow: hidden;
     background: #f8f9fa;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-bottom: 1px solid #eee; /* 保留底部边框作为分隔 */
+    padding: 25px 0; /* 增加上下内边距 */
+    margin-bottom: 15px; /* 增加底部外边距作为间隔 */
 }
 
 .grid-item:hover {
@@ -788,4 +798,155 @@ body {
     .comment-respond {
         padding: 20px;
     }
+}
+/* 分享弹窗样式 */
+.share-modal {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.share-modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 300px;
+    text-align: center;
+    position: relative;
+}
+
+.share-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.share-qrcode {
+    margin: 20px 0;
+    padding: 10px;
+    background: #fff;
+    display: inline-block;
+    border: 1px solid #eee;
+}
+
+.share-qrcode img {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+}
+
+.copy-link {
+    background: #007cba;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.copy-link:hover {
+    background: #005a87;
+}
+/* 优化文章列表样式 */
+.article-list {
+    list-style: none;
+    margin-bottom: 30px;
+}
+
+.article-item {
+    border-bottom: 1px solid #eee;
+    padding: 30px 0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.article-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* 最后一个项目不加边框 */
+.article-item:last-child {
+    border-bottom: none;
+}
+
+.article-title {
+    font-size: 22px;
+    margin-bottom: 12px;
+}
+
+.article-title a {
+    text-decoration: none;
+    color: #333;
+    transition: color 0.3s ease;
+}
+
+.article-title a:hover {
+    color: #007cba;
+}
+
+.article-meta {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+    display: flex;
+    gap: 20px;
+}
+
+.article-excerpt {
+    margin-top: 10px;
+    color: #555;
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+
+.read-more a {
+    display: inline-block;
+    color: #007cba;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.3s ease;
+}
+
+.read-more a:hover {
+    color: #005a87;
+    text-decoration: underline;
+}
+
+/* 加载更多按钮样式 */
+.load-more-container {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.load-more-button {
+    background: #007cba;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 6px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.load-more-button:hover {
+    background: #005a87;
+}
+
+.load-more-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
 }

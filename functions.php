@@ -308,3 +308,70 @@ function minimal_personal_comment_callback($comment, $args, $depth) {
         </article>
     <?php
 }
+// 添加加载更多文章的AJAX处理
+function minimal_personal_load_more() {
+    check_ajax_referer('minimal_personal_nonce', 'nonce');
+    
+    $page = isset($_POST['page']) ? intval($_POST['page']) : 1;
+    
+    $args = array(
+        'post_type' => 'post',
+        'posts_per_page' => 10,
+        'paged' => $page,
+        'post_status' => 'publish'
+    );
+    
+    $query = new WP_Query($args);
+    
+    ob_start();
+    
+    if ($query->have_posts()) :
+        while ($query->have_posts()) : $query->the_post();
+            ?>
+            <article class="article-item">
+                <h2 class="article-title">
+                    <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
+                </h2>
+                
+                <div class="article-meta">
+                    <time datetime="<?php echo get_the_date('c'); ?>">
+                        <?php echo get_the_date(); ?>
+                    </time>
+                    <span class="view-count">
+                        <?php 
+                        $views = get_post_meta(get_the_ID(), '_minimal_personal_views', true) ?: 0;
+                        echo $views . ' 浏览'; 
+                        ?>
+                    </span>
+                </div>
+                
+                <div class="article-excerpt">
+                    <?php 
+                    if (has_excerpt()) {
+                        the_excerpt();
+                    } else {
+                        $content = wp_strip_all_tags(get_the_content());
+                        echo mb_substr($content, 0, 150) . '...';
+                    }
+                    ?>
+                </div>
+                
+                <div class="read-more">
+                    <a href="<?php the_permalink(); ?>">阅读全文 →</a>
+                </div>
+            </article>
+            <?php
+        endwhile;
+        wp_reset_postdata();
+    endif;
+    
+    $html = ob_get_clean();
+    
+    wp_send_json_success(array(
+        'html' => $html,
+        'has_more' => $query->max_num_pages > $page
+    ));
+}
+
+add_action('wp_ajax_minimal_personal_load_more', 'minimal_personal_load_more');
+add_action('wp_ajax_nopriv_minimal_personal_load_more', 'minimal_personal_load_more');

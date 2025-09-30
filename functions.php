@@ -373,5 +373,112 @@ function minimal_personal_load_more() {
     ));
 }
 
+
 add_action('wp_ajax_minimal_personal_load_more', 'minimal_personal_load_more');
 add_action('wp_ajax_nopriv_minimal_personal_load_more', 'minimal_personal_load_more');
+
+/**
+ * 为friend_link添加自定义字段（链接地址和跳转方式）
+ */
+function friend_link_add_meta_box() {
+    // 仅在friend_link类型的文章编辑页显示
+    add_meta_box(
+        'friend_link_meta_box',
+        '友情链接信息',
+        'friend_link_meta_box_callback',
+        'friend_link', // 对应你的自定义文章类型
+        'normal',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'friend_link_add_meta_box');
+
+/**
+ * 自定义字段的HTML内容
+ */
+function friend_link_meta_box_callback($post) {
+    // 加载已保存的数据
+    $link_url = get_post_meta($post->ID, '_friend_link_url', true);
+    $link_target = get_post_meta($post->ID, '_friend_link_target', true) ?: '_blank'; // 默认新窗口打开
+
+    // 安全验证字段
+    wp_nonce_field('save_friend_link_meta', 'friend_link_meta_nonce');
+
+    // 链接地址输入框
+    echo '<p>';
+    echo '<label for="friend_link_url" style="display: block; margin-bottom: 5px; font-weight: bold;">站点链接（必须包含http://或https://）：</label>';
+    echo '<input type="url" id="friend_link_url" name="friend_link_url" value="' . esc_attr($link_url) . '" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>';
+    echo '</p>';
+
+    // 跳转方式选择框
+    echo '<p>';
+    echo '<label for="friend_link_target" style="display: block; margin-bottom: 5px; font-weight: bold;">跳转方式：</label>';
+    echo '<select id="friend_link_target" name="friend_link_target" style="width: 200px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">';
+    echo '<option value="_blank"' . selected($link_target, '_blank', false) . '>新窗口打开（推荐）</option>';
+    echo '<option value="_self"' . selected($link_target, '_self', false) . '>当前窗口打开</option>';
+    echo '</select>';
+    echo '</p>';
+}
+
+/**
+ * 保存自定义字段数据
+ */
+function save_friend_link_meta($post_id) {
+    // 验证安全字段
+    if (!isset($_POST['friend_link_meta_nonce']) || !wp_verify_nonce($_POST['friend_link_meta_nonce'], 'save_friend_link_meta')) {
+        return;
+    }
+    // 禁止自动保存时执行
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+    // 验证权限（确保是friend_link类型且有编辑权限）
+    if (isset($_POST['post_type']) && $_POST['post_type'] === 'friend_link' && !current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    // 保存链接地址
+    if (isset($_POST['friend_link_url'])) {
+        $url = esc_url_raw($_POST['friend_link_url']); // 验证并净化URL
+        update_post_meta($post_id, '_friend_link_url', $url);
+    }
+
+    // 保存跳转方式
+    if (isset($_POST['friend_link_target']) && in_array($_POST['friend_link_target'], ['_blank', '_self'])) {
+        update_post_meta($post_id, '_friend_link_target', sanitize_text_field($_POST['friend_link_target']));
+    }
+}
+add_action('save_post', 'save_friend_link_meta');
+
+/**
+ * 在friend_link列表页添加自定义列
+ */
+function friend_link_add_list_columns($columns) {
+    // 添加“链接地址”和“跳转方式”列
+    $columns['link_url'] = '站点链接';
+    $columns['link_target'] = '跳转方式';
+    return $columns;
+}
+add_filter('manage_friend_link_posts_columns', 'friend_link_add_list_columns');
+
+/**
+ * 填充自定义列的内容
+ */
+function friend_link_fill_list_columns($column, $post_id) {
+    switch ($column) {
+        case 'link_url':
+            $url = get_post_meta($post_id, '_friend_link_url', true);
+            if ($url) {
+                echo '<a href="' . esc_url($url) . '" target="_blank">' . esc_html($url) . '</a>';
+            } else {
+                echo '<span style="color: #dc3232;">未设置</span>';
+            }
+            break;
+        case 'link_target':
+            $target = get_post_meta($post_id, '_friend_link_target', true) ?: '_blank';
+            echo $target === '_blank' ? '新窗口' : '当前窗口';
+            break;
+    }
+}
+add_action('manage_friend_link_posts_custom_column', 'friend_link_fill_list_columns', 10, 2);
+

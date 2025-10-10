@@ -22,35 +22,43 @@ class MinimalPersonalLightbox {
     }
     
     // 修改collectImages方法
-    collectImages() {
-    // 收集文章页面的图片
-    if (document.querySelector('.single-post')) {
-        const gridImages = document.querySelectorAll('.post-image-grid .grid-image[data-image-src]');
-        this.images = Array.from(gridImages).map(img => ({
-            src: img.dataset.imageSrc,
-            caption: img.alt
-        }));
-        
-        // 如果有更多图片，补充完整
-        const totalImages = parseInt(document.querySelector('.more-text')?.textContent.match(/\+(\d+)/)?.[1] || 0) + 9;
-        if (totalImages > this.images.length) {
-            // 这里需要实际项目中根据实际情况补充完整图片列表
-            // 示例：假设我们已经有了所有图片的数组
-            // 实际应用中可能需要通过其他方式获取完整图片列表
-        }
-    } 
-    // 保留原有的九宫格页面图片收集
-    else {
-        const gridImages = document.querySelectorAll('.grid-image[data-image-src]');
-        this.images = Array.from(gridImages).map(img => ({
+collectImages() {
+    // 保留发现页图片
+    const gridImages = document.querySelectorAll('.grid-image[data-image-src]');
+    // 新增文章页面特色图片
+    const featuredImages = document.querySelectorAll('.article-featured-image img');
+    // 新增文章内容中的图片
+    const contentImages = document.querySelectorAll('.article-content img');
+    
+    // 合并所有图片并提取必要信息
+    this.images = [
+        ...Array.from(gridImages).map(img => ({
             src: img.dataset.imageSrc,
             caption: img.alt,
             postId: img.dataset.postId
-        }));
-    }
+        })),
+        ...Array.from(featuredImages).map(img => ({
+            src: img.src, // 或替换为高清图链接（如wp_get_attachment_image_src获取的原图）
+            caption: img.alt,
+            postId: img.closest('article')?.id?.replace('post-', '') // 提取文章ID
+        })),
+        ...Array.from(contentImages).map(img => ({
+            src: img.src, // 同上，建议用高清图
+            caption: img.alt,
+            postId: img.closest('article')?.id?.replace('post-', '')
+        }))
+    ];
 }
     
     bindEvents() {
+        // 绑定文章图片点击事件
+document.querySelectorAll('.article-featured-image img, .article-content img').forEach((img, index) => {
+    // 计算当前图片在合并列表中的索引（需调整索引映射逻辑）
+    const globalIndex = Array.from(gridImages).length + index;
+    img.addEventListener('click', () => {
+        this.open(globalIndex);
+    });
+});
         // 图片点击事件
         document.querySelectorAll('.grid-image[data-image-src]').forEach(img => {
            img.addEventListener('click', () => {

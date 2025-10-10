@@ -502,3 +502,18 @@ function minimal_personal_remove_images_from_content($content) {
     return $content;
 }
 add_filter('the_content', 'minimal_personal_remove_images_from_content', 100);
+
+// 在 functions.php 中添加
+function add_lightbox_attr_to_content_images($content) {
+    global $post;
+    // 仅在文章详情页生效
+    if (is_single()) {
+        $content = preg_replace_callback('/<img(.*?)src="(.*?)"(.*?)>/i', function($matches) {
+            // 获取原图URL（需解析附件ID，这里简化处理）
+            $full_src = $matches[2]; // 实际需通过附件ID获取原图，此处仅示例
+            return '<img' . $matches[1] . 'src="' . $matches[2] . '" data-image-src="' . $full_src . '"' . $matches[3] . '>';
+        }, $content);
+    }
+    return $content;
+}
+add_filter('the_content', 'add_lightbox_attr_to_content_images');

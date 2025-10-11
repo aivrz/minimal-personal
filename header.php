@@ -46,6 +46,12 @@
                     <div class="header-signature"><?php echo esc_html($signature); ?></div>
                 <?php endif; ?>
             </div>
+            <!-- 主题切换按钮（右上角）-->
+            <div class="theme-toggle-wrapper" aria-hidden="false">
+                <button id="themeToggle" class="theme-toggle-button" aria-label="<?php echo esc_attr__('切换白天/黑夜模式', 'minimal-personal'); ?>" title="<?php echo esc_attr__('切换白天/黑夜模式', 'minimal-personal'); ?>">
+                    <span class="theme-toggle-icon" aria-hidden="true">🌙</span>
+                </button>
+            </div>			
         </div>
     </header>
 

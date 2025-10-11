@@ -21,7 +21,21 @@
                 ?>
                 
                 <div class="grid-item">
-                    
+                                        
+                    <a href="<?php the_permalink(); ?>" style="text-decoration:none;">
+                    <?php if ($thumbnail_url) : ?>
+                        <img src="<?php echo esc_url($thumbnail_url); ?>" 
+                             alt="<?php echo esc_attr(sprintf('%s - %s', get_the_title(), get_bloginfo('name'))); ?>" 
+                             class="grid-image"
+                             data-post-id="<?php echo $post_id; ?>"
+                             data-image-src="<?php echo esc_url(get_the_post_thumbnail_url($post_id, 'large')); ?>">
+                    <?php else : ?>
+                        <div class="grid-image no-image" style="background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">
+                            暂无图片
+                        </div>
+                    <?php endif; ?>
+                    </a>
+					
                     <div class="grid-info">
                         <h2 class="grid-title">
                             <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
@@ -35,20 +49,6 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <?php if ($thumbnail_url) : ?>
-                        <img src="<?php echo esc_url($thumbnail_url); ?>" 
-                             alt="<?php echo esc_attr(sprintf('%s - %s', get_the_title(), get_bloginfo('name'))); ?>" 
-                             class="grid-image"
-                             data-post-id="<?php echo $post_id; ?>"
-                             data-image-src="<?php echo esc_url(get_the_post_thumbnail_url($post_id, 'large')); ?>">
-                    <?php else : ?>
-                        <div class="grid-image no-image" style="background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">
-                            暂无图片
-                        </div>
-                    <?php endif; ?>
-                    
-                    
                 </div>
                 
             <?php endwhile; ?>

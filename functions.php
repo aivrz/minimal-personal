@@ -220,7 +220,10 @@ function minimal_personal_enqueue_scripts() {
         'ajax_url' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('minimal_personal_nonce')
     ));
-    
+
+    // 主题切换脚本（用于自动按时区和手动切换）
+    wp_enqueue_script('minimal-personal-theme', get_template_directory_uri() . '/js/theme-toggle.js', array(), '1.0', true);
+
     // 评论回复脚本（如果支持评论）
     if (is_singular() && comments_open() && get_option('thread_comments')) {
         wp_enqueue_script('comment-reply');
@@ -421,7 +424,7 @@ function friend_link_meta_box_callback($post) {
     // 链接地址输入框
     echo '<p>';
     echo '<label for="friend_link_url" style="display: block; margin-bottom: 5px; font-weight: bold;">站点链接（必须包含http://或https://）：</label>';
-    echo '<input type="url" id="friend_link_url" name="friend_link_url" value="' . esc_attr($link_url) . '" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required>';
+    echo '<input type="url" id="friend_link_url" name="friend_link_url" value="' . esc_attr($link_url) . '" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" required';
     echo '</p>';
 
     // 跳转方式选择框
@@ -496,36 +499,156 @@ function friend_link_fill_list_columns($column, $post_id) {
 }
 add_action('manage_friend_link_posts_custom_column', 'friend_link_fill_list_columns', 10, 2);
 
-// 在functions.php中添加图片处理函数
+/**
+ * 图片处理与九宫格渲染（修改/替换点）
+ *
+ * 说明：
+ * - minimal_personal_get_post_image_ids(): 解析 content 中的 img src -> attachment ID（优先）并补充 article attachments
+ * - minimal_personal_render_gallery(): 在文章页输出九宫格 DOM（最多9张，超出在第9张显示 +N）
+ * - minimal_personal_get_post_images(): 向后兼容接口（返回 full url 列表）
+ * - 保留对 the_content 的过滤：移除原始 <img>，并为残留图片补 data-image-src
+ */
+
+/**
+ * 返回文章中图片的附件ID数组（优先解析 content 中的图片 URL -> attachment ID，补充附加的 attachment）
+ */
+function minimal_personal_get_post_image_ids( $post_id = 0 ) {
+    $post_id = $post_id ? intval( $post_id ) : get_the_ID();
+    if ( ! $post_id ) {
+        return array();
+    }
+
+    $post = get_post( $post_id );
+    if ( ! $post ) {
+        return array();
+    }
+
+    $ids = array();
+
+    // 1) 从文章内容解析出所有 img 的 src，并尝试把 URL 转为附件 ID
+    if ( preg_match_all( '/<img[^>]+src=[\'"]([^\'"]+)[\'"]/i', $post->post_content, $matches ) ) {
+        foreach ( $matches[1] as $src ) {
+            $src = esc_url_raw( $src );
+            $aid = attachment_url_to_postid( $src );
+            if ( $aid && ! in_array( $aid, $ids, true ) ) {
+                $ids[] = $aid;
+            }
+        }
+    }
+
+    // 2) 补上所有已上传并附着到当前文章的图片（保持上传顺序）
+    $attached = get_children( array(
+        'post_parent'    => $post_id,
+        'post_status'    => 'inherit',
+        'post_type'      => 'attachment',
+        'post_mime_type' => 'image',
+        'orderby'        => 'menu_order ID',
+        'order'          => 'ASC',
+    ) );
+    if ( $attached ) {
+        foreach ( $attached as $att ) {
+            if ( ! in_array( $att->ID, $ids, true ) ) {
+                $ids[] = $att->ID;
+            }
+        }
+    }
+
+    return $ids;
+}
+
+/**
+ * 在单篇文章页面渲染九宫格画廊（最多显示前9张，超出在第9张显示“查看更多”）
+ */
+function minimal_personal_render_gallery( $post_id = 0 ) {
+    $post_id = $post_id ? intval( $post_id ) : get_the_ID();
+    $ids    = minimal_personal_get_post_image_ids( $post_id );
+
+    if ( empty( $ids ) ) {
+        return;
+    }
+
+    $total = count( $ids );
+    $max_visible = 9;
+    $visible = array_slice( $ids, 0, $max_visible );
+    $remaining = max( 0, $total - count( $visible ) );
+
+    // 准备 full 大图 URL 数组，供 JS lightbox 使用
+    $full_urls = array();
+    foreach ( $ids as $aid ) {
+        $url = wp_get_attachment_image_url( $aid, 'full' );
+        if ( $url ) {
+            $full_urls[] = $url;
+        }
+    }
+
+    // 输出九宫格结构
+    ?>
+    <div class="mp-gallery" aria-label="<?php echo esc_attr__( '文章画廊', 'minimal-personal' ); ?>" data-full-urls="<?php echo esc_attr( wp_json_encode( $full_urls ) ); ?>">
+        <div class="mp-gallery__grid" role="list">
+            <?php foreach ( $visible as $i => $aid ) : 
+                $alt = get_post_meta( $aid, '_wp_attachment_image_alt', true );
+                // 使用主题已注册的 grid-thumb（或 grid-thumb 可替换为更大尺寸）
+                $img = wp_get_attachment_image( $aid, 'grid-thumb', false, array(
+                    'class' => 'mp-gallery__img',
+                    'loading' => 'lazy',
+                    'data-index' => esc_attr( $i ),
+                    'alt' => esc_attr( $alt ),
+                ) );
+            ?>
+                <figure class="mp-gallery__item" role="listitem">
+                    <button class="mp-gallery__btn" type="button" data-index="<?php echo esc_attr( $i ); ?>" aria-label="<?php echo esc_attr__( '打开图片', 'minimal-personal' ); ?>">
+                        <?php echo $img; ?>
+                        <?php if ( $i === $max_visible - 1 && $remaining > 0 ) : ?>
+                            <div class="mp-gallery__more" aria-hidden="true">
+                                <span class="mp-gallery__more-count"><?php echo '+' . intval( $remaining ); ?></span>
+                                <span class="mp-gallery__more-label"><?php echo esc_html__( '查看更多', 'minimal-personal' ); ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </button>
+                </figure>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * 兼容之前的函数：保留 minimal_personal_get_post_images() 的调用点（向后兼容）
+ * 旧函数改为返回图片URL列表（仅在需要时）
+ */
 function minimal_personal_get_post_images() {
-    global $post;
-    
-    // 获取文章内容中的所有图片
-    preg_match_all('/<img[^>]+src=[\'"]([^\'"]+)[\'"]/i', $post->post_content, $matches);
-    
-    return $matches[1];
+    $ids = minimal_personal_get_post_image_ids();
+    $urls = array();
+    foreach ( $ids as $id ) {
+        $url = wp_get_attachment_image_url( $id, 'full' );
+        if ( $url ) $urls[] = $url;
+    }
+    return $urls;
 }
 
-// 过滤文章内容，移除原始图片标签
-function minimal_personal_remove_images_from_content($content) {
-    if (is_single()) {
-        $content = preg_replace('/<img[^>]+>/i', '', $content);
+/**
+ * 保持移除原始 content 中 img 的行为（单篇页面）
+ * 保留，确保内容区不会重复显示图片（我们用 render_gallery 来输出）
+ */
+function minimal_personal_remove_images_from_content( $content ) {
+    if ( is_single() ) {
+        $content = preg_replace( '/<img[^>]+>/i', '', $content );
     }
     return $content;
 }
-add_filter('the_content', 'minimal_personal_remove_images_from_content', 100);
+add_filter( 'the_content', 'minimal_personal_remove_images_from_content', 100 );
 
-// 在 functions.php 中添加
-function add_lightbox_attr_to_content_images($content) {
-    global $post;
-    // 仅在文章详情页生效
-    if (is_single()) {
-        $content = preg_replace_callback('/<img(.*?)src="(.*?)"(.*?)>/i', function($matches) {
-            // 获取原图URL（需解析附件ID，这里简化处理）
-            $full_src = $matches[2]; // 实际需通过附件ID获取原图，此处仅示例
-            return '<img' . $matches[1] . 'src="' . $matches[2] . '" data-image-src="' . $full_src . '"' . $matches[3] . '>';
-        }, $content);
+/**
+ * 为 content 中的图片（若仍存在）补充 data-image-src 属性（尽量不依赖）
+ * 仅作兼容（不会影响我们渲染的九宫格）
+ */
+function add_lightbox_attr_to_content_images( $content ) {
+    if ( is_single() && $content ) {
+        $content = preg_replace_callback( '/<img(.*?)src=[\'"](.*?)[\'"](.*?)>/i', function( $matches ) {
+            $full_src = $matches[2];
+            return '<img' . $matches[1] . 'src="' . esc_url( $matches[2] ) . '" data-image-src="' . esc_attr( $full_src ) . '"' . $matches[3] . '>';
+        }, $content );
     }
     return $content;
 }
-add_filter('the_content', 'add_lightbox_attr_to_content_images');
+add_filter( 'the_content', 'add_lightbox_attr_to_content_images' );

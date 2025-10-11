@@ -4,6 +4,120 @@ Description: 极简风格个人向WordPress主题
 Version: 1.0
 Author: Your Name
 */
+/* === 主题变量：白天/夜间模式支持 ===
+   使用 [data-theme="dark"] 切换到暗色
+*/
+:root {
+  /* 亮色（默认） */
+  --bg: #ffffff;
+  --text: #222222;
+  --muted: #666666;
+  --border: #e9e9e9;
+  --header-bg: #ffffff;
+  --footer-bg: #ffffff;
+  --accent: #007cba;
+  --button-bg: rgba(0,0,0,0.04);
+  --button-color: inherit;
+  --link-color: var(--accent);
+  --shadow: rgba(0,0,0,0.06);
+}
+
+/* 兼容性：同时匹配 html[data-theme] 和 body[data-theme] */
+html[data-theme="dark"], body[data-theme="dark"] {
+  --bg: #0f1720;
+  --text: #e6eef6;
+  --muted: #9fb0c8;
+  --border: rgba(255,255,255,0.06);
+  --header-bg: #0b1116;
+  --footer-bg: #071018;
+  --accent: #2aa6ff;
+  --button-bg: rgba(255,255,255,0.04);
+  --button-color: inherit;
+  --link-color: var(--accent);
+  --shadow: rgba(0,0,0,0.6);
+  --title-color: #ffffff;
+}
+
+/* 保证当 body 或 html 其中一个含有 data-theme 时样式生效（防止某些模板仅设置 body） */
+
+/* 全局基础颜色使用变量 */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* header/footer 背景 */
+.site-header { background: var(--header-bg); border-bottom: 1px solid var(--border); }
+.site-footer { background: var(--footer-bg); border-top: 1px solid var(--border); }
+
+/* 链接颜色 */
+a { color: var(--link-color); }
+
+/* 统一按钮风格（包含主题切换按钮） */
+.theme-toggle-button,
+.article-actions .action-button,
+.button,
+button {
+  background: var(--button-bg);
+  color: var(--button-color);
+  border: 1px solid transparent;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 主题切换按钮的定位（header 右上角） */
+.header-content {
+  position: relative;
+}
+.theme-toggle-wrapper {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 切换按钮样式微调 */
+.theme-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  width: 36px;
+  font-size: 16px;
+  line-height: 1;
+  background: var(--button-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: background-color 200ms ease, transform 150ms ease;
+}
+.theme-toggle-button:hover {
+  transform: translateY(-1px);
+}
+.theme-toggle-button:focus {
+  outline: 3px solid rgba(0,124,186,0.18);
+  outline-offset: 2px;
+}
+
+/* 确保 article / 对话框 等也使用变量 */
+.article-header,
+.article-content,
+.comments-area,
+.comment-respond {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+/* 小屏幕时调整切换按钮位置，避免遮挡 */
+@media (max-width: 480px) {
+  .theme-toggle-wrapper {
+    right: 12px;
+  }
+}
 
 /* 基础重置 */
 * {
@@ -80,6 +194,25 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+}
+
+/* 应用于文章标题与评论标题，使用较高优先级以覆盖主题原有规则 */
+html[data-theme="dark"] .article-title,
+body[data-theme="dark"] .article-title,
+html[data-theme="dark"] .comments-title,
+body[data-theme="dark"] .comments-title {
+  color: var(--title-color) !important;
+  /* 若需要更明显的分层，可适当增加 font-weight */
+  font-weight: 700 !important;
+}
+
+/* 暗色模式：提高评论提交按钮的文字对比度 */
+html[data-theme="dark"] .comment-submit,
+body[data-theme="dark"] .comment-submit {
+  color: var(--text) !important;          /* 使用暗色主题的主文本色，保证可读性 */
+  background: var(--button-bg) !important;/* 保持按钮背景与其它按钮一致 */
+  border-color: var(--border) !important;
+  box-shadow: none !important;
 }
 
 /* 底部导航 */
@@ -540,7 +673,50 @@ body {
     gap: 30px;
     margin-bottom: 20px;
 }
+/* 统一文章操作按钮样式：保证 a 和 button 外观一致，去除 a 的下划线并垂直居中 */
+.article-actions .action-button {
+    display: inline-flex;               /* 保证水平布局且垂直居中 */
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 60px;                       /* 统一高度（根据需要调整） */
+    padding: 6px 12px;
+    margin: 0 6px 0 0;
+    border: none;                       /* 如果是 <button>，去掉默认边框 */
+    background: transparent;            /* 保持原有风格（可调整为色块） */
+    color: inherit;
+    font-size: 14px;
+    line-height: 1;                     /* 防止行高影响对齐 */
+    vertical-align: middle;             /* 与周围文本基线对齐 */
+    text-decoration: none;              /* 去掉 a 的下划线 */
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: 6px;                 /* 可选，和主题风格一致 */
+    box-sizing: border-box;
+}
 
+/* 确保 a.action-button 在 hover/active 时也不出现下划线 */
+.article-actions .action-button:hover,
+.article-actions .action-button:active {
+    text-decoration: none;
+}
+
+/* 保持无障碍焦点样式（不要去掉 focus） */
+.article-actions .action-button:focus {
+    outline: 3px solid rgba(0,124,186,0.18);
+    outline-offset: 2px;
+}
+
+/* 如果需要让图标垂直居中（保险） */
+.article-actions .action-button .action-icon {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+
+/* 如果仍旧有视觉差（例如按钮高度比其他控件略大），可微调高度/padding */
 .action-button {
     display: flex;
     flex-direction: column;
@@ -1031,3 +1207,101 @@ body {
     font-weight: bold;
     text-align: center;
 }
+
+/* === 更柔和的暗色方案（替换之前的强暗色） ===
+   把本段追加到 style.css 末尾（或替换之前的暗色变量段）
+*/
+html[data-theme="dark"], body[data-theme="dark"] {
+  /* 更柔和的背景色（比纯黑或更深的深色更轻一点） */
+  --bg: #1f2937;           /* 深灰-蓝（更柔和） */
+  --text: #dde8f3;         /* 温和的白色文本 */
+  --muted: #9fb0c8;
+  --border: rgba(255,255,255,0.07);
+  --header-bg: #0f1724;    /* 头部比主体稍深，保留分层感 */
+  --footer-bg: #0c1622;
+  --accent: #4aa3ff;       /* 轻一点的蓝色高亮 */
+  --button-bg: rgba(255,255,255,0.03);
+  --button-color: inherit;
+  --link-color: var(--accent);
+  --shadow: rgba(0,0,0,0.45);
+  --overlay: rgba(0,0,0,0.45); /* 画廊 / 遮罩层，略透明 */
+}
+
+/* 应用到主要容器（保留 !important 用于覆盖主题中写死颜色的情况；调试通过后可去掉） */
+html[data-theme="dark"] body,
+body[data-theme="dark"] body,
+html[data-theme="dark"] .site-main,
+body[data-theme="dark"] .site-main,
+html[data-theme="dark"] .single-post,
+body[data-theme="dark"] .single-post,
+html[data-theme="dark"] .article-content,
+body[data-theme="dark"] .article-content,
+html[data-theme="dark"] .site-header,
+body[data-theme="dark"] .site-header,
+html[data-theme="dark"] .site-footer,
+body[data-theme="dark"] .site-footer {
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* 链接与强调色 */
+html[data-theme="dark"] a,
+body[data-theme="dark"] a {
+  color: var(--link-color) !important;
+}
+
+/* 减轻暗色遮罩强度（画廊“更多”覆盖层与 lightbox 背景）*/
+html[data-theme="dark"] .mp-gallery__more,
+body[data-theme="dark"] .mp-gallery__more {
+  background: rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme="dark"] .mp-lightbox,
+body[data-theme="dark"] .mp-lightbox {
+  background: rgba(0,0,0,0.75) !important; /* 比之前更透明一点 */
+}
+
+/* 卡片/网格/评论表单：避免纯白背景带来的强烈反差，转为透明或轻微暗色 */
+html[data-theme="dark"] .grid-item,
+body[data-theme="dark"] .grid-item,
+html[data-theme="dark"] .comment-respond,
+body[data-theme="dark"] .comment-respond {
+  background-color: rgba(255,255,255,0.02) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+/* 小按钮、导航使用变量 */
+html[data-theme="dark"] .nav-button,
+body[data-theme="dark"] .nav-button,
+html[data-theme="dark"] .theme-toggle-button,
+body[data-theme="dark"] .theme-toggle-button {
+  background: var(--button-bg) !important;
+  border-color: var(--border) !important;
+  color: var(--button-color) !important;
+}
+
+/* 可选：让图片框在暗色时更融入背景（避免白色图片卡片显突兀） */
+html[data-theme="dark"] .mp-gallery__item,
+body[data-theme="dark"] .mp-gallery__item {
+  background: transparent !important;
+}
+
+/* 聚焦样式（保留可见性） */
+html[data-theme="dark"] .theme-toggle-button:focus,
+body[data-theme="dark"] .theme-toggle-button:focus,
+html[data-theme="dark"] .action-button:focus,
+body[data-theme="dark"] .action-button:focus {
+  outline: 3px solid rgba(74,163,255,0.18) !important;
+  outline-offset: 2px !important;
+}
+
+/* 响应式保持位置 */
+@media (max-width: 480px) {
+  .theme-toggle-wrapper {
+    right: 12px;
+  }
+}
+
+/* 说明：如果需要更亮的暗色（接近暗灰而非接近黑），把 --bg 调到 #1b2430 或 #1f2937 */

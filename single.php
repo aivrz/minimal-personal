@@ -56,67 +56,17 @@ minimal_personal_update_views(get_the_ID());
         
         <div class="article-content">
     <?php 
-    // 获取文章中的所有图片
-    $post_images = minimal_personal_get_post_images();
-    $total_images = count($post_images);
-    
-    // 只在有图片时显示图片网格
-    if ($total_images > 0) : 
-        // 根据图片数量确定网格布局类
-        if ($total_images == 1) {
-            $grid_class = 'single-image';
-        } elseif ($total_images <= 4) {
-            $grid_class = 'four-grid';
-        } elseif ($total_images <= 6) {
-            $grid_class = 'six-grid';
-        } else {
-            $grid_class = 'nine-grid';
-        }
+    // 使用新的渲染函数输出九宫格（不改变目录结构，仅替换行为）
+    minimal_personal_render_gallery( get_the_ID() );
+
+    // 输出文章内容（the_content 的 filter 会移除 <img>，避免重复）
+    the_content();
     ?>
-    
-    <div class="post-image-grid <?php echo $grid_class; ?>">
-        <?php
-        // 确定要显示的图片数量（最多9张，超过时第9张显示查看更多）
-        $display_count = min($total_images, 9);
-        
-        for ($i = 0; $i < $display_count; $i++) :
-            $image_src = $post_images[$i];
-            
-            // 第九张且有更多图片时显示查看更多
-            if ($i == 8 && $total_images > 9) :
-        ?>
-            <div class="grid-item more-images">
-                <img src="<?php echo esc_url($image_src); ?>" alt="图片 <?php echo $i + 1; ?>" 
-                     class="grid-image" data-image-src="<?php echo esc_url($image_src); ?>"
-                     data-index="<?php echo $i; ?>">
-                <div class="more-overlay">
-                    <span class="more-text">+<?php echo $total_images - 9; ?> 查看更多</span>
-                </div>
-            </div>
-        <?php else : ?>
-            <div class="grid-item">
-                <img src="<?php echo esc_url($image_src); ?>" alt="图片 <?php echo $i + 1; ?>" 
-                     class="grid-image" data-image-src="<?php echo esc_url($image_src); ?>"
-                     data-index="<?php echo $i; ?>">
-            </div>
-        <?php endif; endfor; ?>
-    </div>
-    
-    <?php endif; ?>
-    
-    <?php the_content(); ?>
-    
-    <?php
-    wp_link_pages(array(
-        'before' => '<div class="page-links">页码: ',
-        'after'  => '</div>',
-    ));
-    ?>
-</div>
+        </div>
 
         <footer class="article-footer">
             <div class="article-actions">
-                <button class="action-button like-button" data-post-id="<?php the_ID(); ?>">
+                <button class="action-button like-button" data-post-id="<?php echo get_the_ID(); ?>">
                     <span class="action-icon">❤️</span>
                     <span class="action-text">点赞</span>
                 </button>
@@ -126,10 +76,11 @@ minimal_personal_update_views(get_the_ID());
                     <span class="action-text">分享</span>
                 </button>
                 
-                <button class="action-button comment-button" onclick="scrollToComments()">
+                <!-- 改为带 href 的锚点，onclick 调用 scrollToComments 以提供平滑滚动（并保留锚点作为备份） -->
+                <a href="#comments" class="action-button comment-button" onclick="event.preventDefault(); scrollToComments();">
                     <span class="action-icon">💬</span>
                     <span class="action-text">评论</span>
-                </button>
+                </a>
             </div>
 
             <?php if (has_tag()) : ?>
@@ -150,11 +101,11 @@ minimal_personal_update_views(get_the_ID());
         </footer>
     </article>
 
-<!-- 灯箱结构 -->
-<div class="lightbox-overlay" id="lightbox">
-    <button class="lightbox-close" id="lightboxClose">×</button>
-    <button class="lightbox-nav lightbox-prev" id="lightboxPrev">‹</button>
-    <button class="lightbox-nav lightbox-next" id="lightboxNext">›</button>
+<!-- 保留主题原有灯箱结构（如有），但新 lightbox.js 也会创建自己的 lightbox DOM -->
+<div class="lightbox-overlay" id="lightbox" aria-hidden="true">
+    <button class="lightbox-close" id="lightboxClose" aria-label="关闭">×</button>
+    <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="上一张">‹</button>
+    <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="下一张">›</button>
     <div class="lightbox-content">
         <img src="" alt="" class="lightbox-image" id="lightboxImage">
         <div class="lightbox-caption" id="lightboxCaption"></div>
@@ -162,16 +113,16 @@ minimal_personal_update_views(get_the_ID());
 </div>
 
     <!-- 分享弹窗 -->
-    <div class="share-modal" id="shareModal">
+    <div class="share-modal" id="shareModal" style="display:none;">
         <div class="share-modal-content">
-            <span class="share-modal-close">&times;</span>
+            <span class="share-modal-close" role="button" aria-label="关闭">&times;</span>
             <h3>分享文章</h3>
             <div class="share-qrcode">
                 <img src="" alt="文章二维码" id="qrcodeImage">
             </div>
             <p>扫描二维码分享</p>
             <div class="share-links">
-                <button class="copy-link" onclick="copyLink()">复制链接</button>
+                <button onclick="copyLink()">复制链接</button>
             </div>
         </div>
     </div>
@@ -199,16 +150,19 @@ function openShareModal() {
     } else {
         generateQRCode();
     }
-    document.getElementById('shareModal').style.display = 'block';
+    const modal = document.getElementById('shareModal');
+    if (modal) modal.style.display = 'block';
 }
 
 function closeShareModal() {
-    document.getElementById('shareModal').style.display = 'none';
+    const modal = document.getElementById('shareModal');
+    if (modal) modal.style.display = 'none';
 }
 
 function generateQRCode() {
     const url = '<?php echo esc_url(get_permalink()); ?>';
     const qrcodeElement = document.getElementById('qrcodeImage');
+    if (!window.QRCode || !qrcodeElement) return;
     QRCode.toCanvas(url, function (error, canvas) {
         if (error) console.error(error);
         qrcodeElement.src = canvas.toDataURL();
@@ -217,9 +171,19 @@ function generateQRCode() {
 
 function copyLink() {
     const url = '<?php echo esc_url(get_permalink()); ?>';
-    navigator.clipboard.writeText(url).then(() => {
-        alert('链接已复制到剪贴板');
-    });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('链接已复制到剪贴板');
+        }).catch(function(){ alert('复制失败，请手动复制链接'); });
+    } else {
+        // 退回方案
+        const el = document.createElement('textarea');
+        el.value = url;
+        document.body.appendChild(el);
+        el.select();
+        try { document.execCommand('copy'); alert('链接已复制到剪贴板'); } catch (e) { alert('复制失败，请手动复制链接'); }
+        document.body.removeChild(el);
+    }
 }
 
 // 点击弹窗外部关闭
@@ -230,32 +194,37 @@ window.onclick = function(event) {
     }
 }
 
-// 关闭按钮事件
-document.querySelector('.share-modal-close').addEventListener('click', closeShareModal);
+// 绑定关闭按钮（先检查元素是否存在，避免抛错）
+const shareClose = document.querySelector('.share-modal-close');
+if (shareClose) {
+    shareClose.addEventListener('click', closeShareModal);
+}
 
-// 原生分享功能
-function shareArticle() {
-    if (navigator.share) {
-        navigator.share({
-            title: '<?php echo esc_js(get_the_title()); ?>',
-            text: '<?php echo esc_js(wp_trim_words(get_the_excerpt(), 20)); ?>',
-            url: '<?php echo esc_url(get_permalink()); ?>'
-        })
-        .then(() => console.log('分享成功'))
-        .catch((error) => console.log('分享失败', error));
-    } else {
-        openShareModal(); // 不支持原生分享时显示弹窗
+// 滚动到评论区域（更鲁棒的实现）
+function scrollToComments() {
+    try {
+        var el = document.getElementById('comments');
+        if (el) {
+            // 若 el 不是可聚焦元素，临时给 tabindex 以便聚焦（可访问性优化）
+            if (!el.hasAttribute('tabindex')) {
+                el.setAttribute('tabindex', '-1');
+            }
+            el.scrollIntoView({ behavior: 'smooth' });
+            // 在滚动之后设置焦点，提升无障碍体验
+            setTimeout(function() {
+                try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+            }, 400);
+            return;
+        }
+        // 回退：使用 hash 触发跳转
+        window.location.hash = '#comments';
+    } catch (e) {
+        // 最后保险回退
+        window.location.hash = '#comments';
     }
 }
 
-// 滚动到评论区域
-function scrollToComments() {
-    document.getElementById('comments').scrollIntoView({
-        behavior: 'smooth'
-    });
-}
-
-// 点赞功能
+// 点赞功能（保留原逻辑）
 jQuery(document).ready(function($) {
     $('.like-button').on('click', function(e) {
         e.preventDefault();
@@ -278,18 +247,17 @@ jQuery(document).ready(function($) {
                 nonce: minimal_personal_ajax.nonce
             },
             success: function(response) {
-                if (response.success) {
-                    $button.removeClass('loading').addClass('liked');
-                    $('.like-count').text(response.data.likes + ' 点赞');
-                    
-                    setTimeout(() => {
-                        $button.removeClass('liked').prop('disabled', false);
-                    }, 3000);
+                if (response.success && response.data && response.data.likes !== undefined) {
+                    $button.removeClass('loading').addClass('liked').prop('disabled', false);
+                    $button.find('.action-text').text('已点赞');
+                } else {
+                    $button.removeClass('loading').prop('disabled', false);
+                    alert('点赞失败，请重试');
                 }
             },
             error: function() {
                 $button.removeClass('loading').prop('disabled', false);
-                alert('点赞失败，请重试');
+                alert('网络错误，请重试');
             }
         });
     });

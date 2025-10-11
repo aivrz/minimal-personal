@@ -1,79 +1,34 @@
-/* 灯箱动画 */
-.lightbox-overlay {
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
+/* 九宫格与 lightbox 样式（覆盖/扩展主题内的 css/lightbox.css） */
 
-.lightbox-overlay.active {
-    opacity: 1;
+.mp-gallery { margin: 1rem 0; }
+.mp-gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
+.mp-gallery__item { position: relative; overflow: hidden; }
+.mp-gallery__btn {
+  display: block; width: 100%; height: 100%; border: 0; background: transparent; padding: 0; cursor: pointer;
+}
+.mp-gallery__img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .25s ease; }
+.mp-gallery__btn:hover .mp-gallery__img { transform: scale(1.03); }
+.mp-gallery__more {
+  position: absolute; inset: 0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background: rgba(0,0,0,0.45); color: #fff; font-weight:600; text-align:center;
+}
+.mp-gallery__more-count { font-size: 20px; margin-bottom:6px; }
 
-.lightbox-image {
-    transform: scale(0.8);
-    transition: transform 0.3s ease;
-}
+/* 响应式 */
+@media (max-width: 700px) { .mp-gallery__grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 420px) { .mp-gallery__grid { grid-template-columns: 1fr; } }
 
-.lightbox-overlay.active .lightbox-image {
-    transform: scale(1);
-}
-
-/* 加载指示器 */
-.lightbox-loading .lightbox-image {
-    opacity: 0;
-}
-
-.lightbox-loading::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 40px;
-    height: 40px;
-    margin: -20px 0 0 -20px;
-    border: 3px solid #ffffff;
-    border-top: 3px solid transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-/* 增强左右导航按钮样式 */
-.lightbox-nav {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 50px;
-    height: 80px;
-    background: rgba(0, 0, 0, 0.5); /* 半透明背景增强可见性 */
-    border: none;
-    color: white;
-    font-size: 30px;
-    cursor: pointer;
-    z-index: 10;
-    transition: background 0.3s ease;
-}
-
-.lightbox-nav:hover {
-    background: rgba(0, 0, 0, 0.7);
-}
-
-.lightbox-prev {
-    left: 0;
-    border-radius: 0 40px 40px 0;
-}
-
-.lightbox-next {
-    right: 0;
-    border-radius: 40px 0 0 40px;
-}
-
-/* 移动设备适配 */
-@media (max-width: 768px) {
-    .lightbox-nav {
-        width: 40px;
-        height: 60px;
-        font-size: 24px;
-    }
-}
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+/* Lightbox */
+.mp-lightbox { position: fixed; inset: 0; z-index: 99999; display: none; align-items:center; justify-content:center; background: rgba(0,0,0,0.85); }
+.mp-lightbox.is-open { display:flex; }
+.mp-lightbox__inner { position: relative; max-width: 95%; max-height: 95%; }
+.mp-lightbox__img { max-width: 100%; max-height: 80vh; display:block; margin: 0 auto; }
+.mp-lightbox__close, .mp-lightbox__prev, .mp-lightbox__next { position: absolute; background: rgba(255,255,255,0.08); border: none; color: #fff; padding: 10px; cursor: pointer; font-size: 20px; border-radius: 6px; }
+.mp-lightbox__close { right: 12px; top: 12px; transform: none; }
+.mp-lightbox__prev { left: 12px; top: 50%; transform: translateY(-50%); }
+.mp-lightbox__next { right: 12px; top: 50%; transform: translateY(-50%); }
+.mp-lightbox__caption { text-align: center; color:#ddd; margin-top:8px; font-size:14px; }

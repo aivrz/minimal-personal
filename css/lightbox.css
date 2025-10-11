@@ -35,7 +35,44 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
+/* 增强左右导航按钮样式 */
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 80px;
+    background: rgba(0, 0, 0, 0.5); /* 半透明背景增强可见性 */
+    border: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    z-index: 10;
+    transition: background 0.3s ease;
+}
 
+.lightbox-nav:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.lightbox-prev {
+    left: 0;
+    border-radius: 0 40px 40px 0;
+}
+
+.lightbox-next {
+    right: 0;
+    border-radius: 40px 0 0 40px;
+}
+
+/* 移动设备适配 */
+@media (max-width: 768px) {
+    .lightbox-nav {
+        width: 40px;
+        height: 60px;
+        font-size: 24px;
+    }
+}
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }

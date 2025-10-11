@@ -3,7 +3,8 @@
 function minimal_personal_setup() {
     // 支持自定义Logo
     add_theme_support('custom-logo');
-    
+    // 启用WordPress自动生成标题标签
+    add_theme_support('title-tag');
     // 支持文章特色图片
     add_theme_support('post-thumbnails');
     
@@ -76,8 +77,8 @@ function minimal_personal_menus() {
 }
 add_action('init', 'minimal_personal_menus');
 
-// 自定义头像字段
-function minimal_personal_customize_register($wp_customize) {
+    // 自定义头像字段
+    function minimal_personal_customize_register($wp_customize) {
     // 个人头像
     $wp_customize->add_setting('personal_avatar', array(
         'default' => '',
@@ -101,7 +102,18 @@ function minimal_personal_customize_register($wp_customize) {
         'section' => 'title_tagline',
         'type' => 'text'
     ));
+    // 首页元描述设置
+    $wp_customize->add_setting('home_meta_description', array(
+        'default' => get_bloginfo('description'), // 默认使用站点描述
+        'sanitize_callback' => 'sanitize_textarea_field'
+    ));
     
+    $wp_customize->add_control('home_meta_description', array(
+        'label' => '首页元描述',
+        'description' => '用于搜索引擎展示的摘要信息，建议120-160个字符',
+        'section' => 'title_tagline',
+        'type' => 'textarea'
+    ));
     // 个性签名
     $wp_customize->add_setting('personal_signature', array(
         'default' => '',

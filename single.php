@@ -150,7 +150,7 @@ minimal_personal_update_views(get_the_ID());
         </footer>
     </article>
 
-<!-- 添加到single.php的文章内容底部 -->
+<!-- 灯箱结构 -->
 <div class="lightbox-overlay" id="lightbox">
     <button class="lightbox-close" id="lightboxClose">×</button>
     <button class="lightbox-nav lightbox-prev" id="lightboxPrev">‹</button>

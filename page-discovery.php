@@ -28,9 +28,9 @@ get_header();
                 <div class="grid-item">
                     <?php if ($thumbnail_url) : ?>
                         <img src="<?php echo esc_url($thumbnail_url); ?>" 
-                             alt="<?php the_title_attribute(); ?>" 
-                             class="grid-image"
-                             data-post-id="<?php echo $post_id; ?>"
+                             alt="<?php echo esc_attr(sprintf('%s - %s', get_the_title(), get_bloginfo('name'))); ?>" 
+                            class="grid-image"
+                            data-post-id="<?php echo $post_id; ?>"
                              data-image-src="<?php echo esc_url(get_the_post_thumbnail_url($post_id, 'large')); ?>">
                     <?php else : ?>
                         <div class="grid-image no-image" style="background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">
@@ -39,9 +39,9 @@ get_header();
                     <?php endif; ?>
                     
                     <div class="grid-info">
-                        <h3 class="grid-title">
+                        <h2 class="grid-title">
                             <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-                        </h3>
+                        </h2>
                         
                         <div class="grid-meta">
                             <span class="post-date"><?php echo get_the_date(); ?></span>

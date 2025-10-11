@@ -8,62 +8,61 @@ class MinimalPersonalLightbox {
         this.lightboxNext = document.getElementById('lightboxNext');
         
         this.images = [];
+        this.gridImages = []; // 新增实例属性存储网格图片
         this.currentIndex = 0;
         
         this.init();
     }
     
     init() {
-        // 收集所有图片
         this.collectImages();
-        
-        // 绑定事件
         this.bindEvents();
     }
     
-    // 修改collectImages方法
-collectImages() {
-    // 保留发现页图片
-    const gridImages = document.querySelectorAll('.grid-image[data-image-src]');
-    // 新增文章页面特色图片
-    const featuredImages = document.querySelectorAll('.article-featured-image img');
-    // 新增文章内容中的图片
-    const contentImages = document.querySelectorAll('.article-content img');
-    
-    // 合并所有图片并提取必要信息
-    this.images = [
-        ...Array.from(gridImages).map(img => ({
-            src: img.dataset.imageSrc,
-            caption: img.alt,
-            postId: img.dataset.postId
-        })),
-        ...Array.from(featuredImages).map(img => ({
-            src: img.src, // 或替换为高清图链接（如wp_get_attachment_image_src获取的原图）
-            caption: img.alt,
-            postId: img.closest('article')?.id?.replace('post-', '') // 提取文章ID
-        })),
-        ...Array.from(contentImages).map(img => ({
-            src: img.src, // 同上，建议用高清图
-            caption: img.alt,
-            postId: img.closest('article')?.id?.replace('post-', '')
-        }))
-    ];
-}
+    collectImages() {
+        // 保存为实例属性而非局部变量
+        this.gridImages = document.querySelectorAll('.grid-image[data-image-src]');
+        const featuredImages = document.querySelectorAll('.article-featured-image img');
+        const contentImages = document.querySelectorAll('.article-content img');
+        
+        this.images = [
+            ...Array.from(this.gridImages).map(img => ({
+                src: img.dataset.imageSrc,
+                caption: img.alt,
+                postId: img.dataset.postId
+            })),
+            ...Array.from(featuredImages).map(img => ({
+                src: img.src,
+                caption: img.alt,
+                postId: img.closest('article')?.id?.replace('post-', '')
+            })),
+            ...Array.from(contentImages).map(img => ({
+                src: img.dataset.imageSrc || img.src,
+                caption: img.alt,
+                postId: img.closest('article')?.id?.replace('post-', '')
+            }))
+        ];
+    }
     
     bindEvents() {
-        // 绑定文章图片点击事件
-document.querySelectorAll('.article-featured-image img, .article-content img').forEach((img, index) => {
-    // 计算当前图片在合并列表中的索引（需调整索引映射逻辑）
-    const globalIndex = Array.from(gridImages).length + index;
-    img.addEventListener('click', () => {
-        this.open(globalIndex);
-    });
-});
-        // 图片点击事件
-        document.querySelectorAll('.grid-image[data-image-src]').forEach(img => {
-           img.addEventListener('click', () => {
-           const index = parseInt(img.dataset.index || 0);
-            this.open(index);
+        // 修复文章图片点击事件绑定
+        document.querySelectorAll('.article-featured-image img, .article-content img').forEach(img => {
+            img.addEventListener('click', () => {
+                // 通过图片src查找在images数组中的索引
+                const imageIndex = this.images.findIndex(
+                    item => item.src === (img.dataset.imageSrc || img.src)
+                );
+                if (imageIndex !== -1) {
+                    this.open(imageIndex);
+                }
+            });
+        });
+        
+        // 网格图片点击事件
+        this.gridImages.forEach(img => {
+            img.addEventListener('click', () => {
+                const index = parseInt(img.dataset.index || 0);
+                this.open(index);
             });
         });
         
@@ -97,6 +96,7 @@ document.querySelectorAll('.article-featured-image img, .article-content img').f
         });
     }
     
+    // 其他方法保持不变...
     open(index) {
         this.currentIndex = index;
         this.updateImage();
@@ -122,7 +122,6 @@ document.querySelectorAll('.article-featured-image img, .article-content img').f
     updateImage() {
         const image = this.images[this.currentIndex];
         
-        // 显示加载状态
         this.lightbox.classList.add('lightbox-loading');
         
         const img = new Image();
@@ -134,13 +133,11 @@ document.querySelectorAll('.article-featured-image img, .article-content img').f
         };
         img.src = image.src;
         
-        // 更新导航按钮状态
         this.lightboxPrev.style.display = this.images.length > 1 ? 'block' : 'none';
         this.lightboxNext.style.display = this.images.length > 1 ? 'block' : 'none';
     }
 }
 
-// 初始化灯箱
 document.addEventListener('DOMContentLoaded', () => {
     new MinimalPersonalLightbox();
 });
